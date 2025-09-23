@@ -20,7 +20,6 @@ def load_data():
     Carrega, une, limpa e pré-processa todos os dataframes usando a lógica de análise completa.
     """
     try:
-        # 1. CARREGAMENTO AMPLIADO DE DADOS
         df_demo = pd.read_csv("DEMO.csv", on_bad_lines='skip', sep=';')
         df_bmx = pd.read_csv("BMX.csv", on_bad_lines='skip', sep=';')
         df_bpq = pd.read_csv("BPQ.csv", on_bad_lines='skip', sep=';')
@@ -28,21 +27,19 @@ def load_data():
         df_tchol = pd.read_csv("TCHOL.csv", on_bad_lines='skip', sep=';')
         df_trigly = pd.read_csv("TRIGLY.csv", on_bad_lines='skip', sep=';')
         df_hdl = pd.read_csv("HDL.csv", on_bad_lines='skip', sep=';')
-        df_ghb = pd.read_csv("GHB.csv", on_bad_lines='skip', sep=';') # Novo
-        df_hscrp = pd.read_csv("HSCRP.csv", on_bad_lines='skip', sep=';') # Novo
+        df_ghb = pd.read_csv("GHB.csv", on_bad_lines='skip', sep=';')
+        df_hscrp = pd.read_csv("HSCRP.csv", on_bad_lines='skip', sep=';')
 
-        # 2. RENOMEAÇÃO AMPLIADA
         df_demo = df_demo.rename(columns={'SEQN': 'id_participante', 'RIDAGEYR': 'idade_anos', 'RIAGENDR': 'genero'})
-        df_bmx = df_bmx.rename(columns={'SEQN': 'id_participante', 'BMXWT': 'peso_kg', 'BMXHT': 'altura_cm', 'BMXBMI': 'imc', 'BMXWAIST': 'circunferencia_cintura_cm'})
+        df_bmx = df_bmx.rename(columns={'SEQN': 'id_participante', 'BMXWT': 'peso_kg', 'BMXHT': 'altura_cm','BMXBMI': 'imc', 'BMXWAIST': 'circunferencia_cintura_cm'})
         df_paq = df_paq.rename(columns={'SEQN': 'id_participante', 'PAD680': 'tempo_sentado_min'})
-        df_bpq = df_bpq.rename(columns={'SEQN': 'id_participante', 'BPQ020': 'historico_pressao_alta', 'BPQ080': 'historico_colesterol_alto', 'BPQ090D': 'historico_doenca_cardiaca'})
+        df_bpq = df_bpq.rename(columns={'SEQN': 'id_participante', 'BPQ020': 'historico_pressao_alta','BPQ080': 'historico_colesterol_alto', 'BPQ090D': 'historico_doenca_cardiaca'})
         df_tchol = df_tchol.rename(columns={'SEQN': 'id_participante', 'LBXTC': 'colesterol_total'})
         df_trigly = df_trigly.rename(columns={'SEQN': 'id_participante', 'LBDLDL': 'ldl'})
         df_hdl = df_hdl.rename(columns={'SEQN': 'id_participante', 'LBDHDD': 'hdl'})
         df_ghb = df_ghb.rename(columns={'SEQN': 'id_participante', 'LBXGH': 'ghb'})
         df_hscrp = df_hscrp.rename(columns={'SEQN': 'id_participante', 'LBXHSCRP': 'hscrp'})
 
-        # 3. JUNÇÃO AMPLIADA
         df_merged = df_demo.merge(df_bmx, on='id_participante', how='inner') \
             .merge(df_paq, on='id_participante', how='inner') \
             .merge(df_bpq, on='id_participante', how='inner') \
@@ -52,19 +49,15 @@ def load_data():
             .merge(df_ghb, on='id_participante', how='left') \
             .merge(df_hscrp, on='id_participante', how='left')
 
-        # 4. LIMPEZA E PADRONIZAÇÃO (Comum a ambos)
         df_merged['genero'] = df_merged['genero'].replace({1: 'Homem', 2: 'Mulher'})
         df_merged['historico_doenca_cardiaca'] = df_merged['historico_doenca_cardiaca'].fillna(9)
         df_merged['idade_anos'] = pd.to_numeric(df_merged['idade_anos'], errors='coerce')
         df_merged['tempo_sentado_min'] = pd.to_numeric(df_merged['tempo_sentado_min'], errors='coerce')
         df_merged['tempo_sentado_min'] = df_merged['tempo_sentado_min'].fillna(df_merged['tempo_sentado_min'].median())
 
-        # 4.1 LIMPEZA MAIS RIGOROSA (DO NOVO SCRIPT)
         colunas_essenciais = ['imc', 'peso_kg', 'altura_cm', 'circunferencia_cintura_cm', 'colesterol_total', 'ldl', 'hdl', 'ghb', 'hscrp']
         df_merged.dropna(subset=[col for col in colunas_essenciais if col in df_merged.columns], inplace=True)
 
-        # 5. CRIAÇÃO DE NOVAS COLUNAS (ENGENHARIA DE FEATURES)
-        # Obesidade e Sedentarismo (usando nossa função melhorada)
         bins_imc = [0, 18.5, 24.9, 29.9, 34.9, 39.9, float('inf')]
         df_merged['obesidade_class'] = pd.cut(df_merged['imc'], bins=bins_imc, labels=LABELS_IMC, right=False)
 
@@ -76,12 +69,10 @@ def load_data():
         df_merged['sedentarismo_nivel'] = df_merged['tempo_sentado_min'].apply(classificar_sedentarismo)
         df_merged['sedentarismo_nivel'] = pd.Categorical(df_merged['sedentarismo_nivel'], categories=LABELS_SED, ordered=True)
         
-        # Históricos
         df_merged['historico_pressao_alta_cat'] = df_merged['historico_pressao_alta'].replace({1.0: 'Sim', 2.0: 'Não', 9.0: 'Não Sabe'})
         df_merged['historico_colesterol_alto_cat'] = df_merged['historico_colesterol_alto'].replace({1.0: 'Sim', 2.0: 'Não', 7.0: 'Não Sabe', 9.0: 'Não Sabe'}).fillna('Não Sabe')
         df_merged['historico_doenca_cardiaca_cat'] = df_merged['historico_doenca_cardiaca'].replace({1.0: 'Sim', 2.0: 'Não', 7.0: 'Não Sabe', 9.0: 'Não Sabe'}).fillna('Não Sabe')
 
-        # NOVAS CLASSIFICAÇÕES DE COLESTEROL (DO NOVO SCRIPT)
         def classificar_colesterol_total(valor):
             if pd.isna(valor): return 'Não disponível'
             elif valor < 200: return 'Normal'
@@ -115,7 +106,6 @@ def load_data():
         st.error(f"Erro ao carregar o arquivo: {e}. Certifique-se de que todos os arquivos CSV estão na mesma pasta que o script.")
         return pd.DataFrame()
 
-# O restante do código do aplicativo permanece o mesmo
 df = load_data()
 
 if df.empty:
@@ -204,7 +194,6 @@ with tab1:
             fig_sedentarismo = px.pie(values=sedentarismo_counts.values, names=sedentarismo_counts.index, hole=0.3)
             st.plotly_chart(fig_sedentarismo, use_container_width=True)
 
-# ... (O restante do código para as abas 2, 3 e 4 continua o mesmo)
 st.markdown("### Fontes de Dados")
 st.markdown("- Base de dados NHANES [https://www.cdc.gov/nchs/nhanes/index.htm](https://www.cdc.gov/nchs/nhanes/index.htm)")
 
@@ -242,12 +231,56 @@ with tab3:
         with col_box_sed1:
             fig_hdl_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='hdl', color='sedentarismo_nivel', title="HDL")
             st.plotly_chart(fig_hdl_sed, use_container_width=True)
-        with col_box2:
+        with col_box_sed2:
             fig_ldl_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='ldl', color='sedentarismo_nivel', title="LDL")
             st.plotly_chart(fig_ldl_sed, use_container_width=True)
         with col_box_sed3:
             fig_tchol_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='colesterol_total', color='sedentarismo_nivel', title="Colesterol Total")
             st.plotly_chart(fig_tchol_sed, use_container_width=True)
+
+    # --- NOVO GRÁFICO ADICIONADO AQUI ---
+    with st.expander("Gráfico Combinado: Riscos por Nível de Sedentarismo", expanded=True):
+        st.subheader("Percentual de Obesidade e Pressão Alta por Nível de Sedentarismo")
+
+        # Define as categorias de obesidade (Grau I, II ou III)
+        categorias_obesidade = ['Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III']
+
+        # Agrupa por nível de sedentarismo e calcula as métricas de interesse
+        # O argumento 'observed=True' é importante para grupos categóricos
+        df_risco_sedentarismo = df_filtrado.groupby('sedentarismo_nivel', observed=True).agg(
+            percentual_obesidade=('obesidade_class', lambda x: x.isin(categorias_obesidade).mean() * 100),
+            percentual_pressao_alta=('historico_pressao_alta_cat', lambda x: (x == 'Sim').mean() * 100)
+        ).reset_index()
+
+        # Reorganiza o dataframe para o formato "longo", ideal para o Plotly
+        df_risco_melted = df_risco_sedentarismo.melt(
+            id_vars='sedentarismo_nivel',
+            value_vars=['percentual_obesidade', 'percentual_pressao_alta'],
+            var_name='Condição de Risco',
+            value_name='Percentual'
+        )
+        
+        # Mapeia os nomes das variáveis para rótulos mais amigáveis para a legenda do gráfico
+        df_risco_melted['Condição de Risco'] = df_risco_melted['Condição de Risco'].map({
+            'percentual_obesidade': 'Obesidade (Grau I-III)',
+            'percentual_pressao_alta': 'Pressão Alta (Histórico)'
+        })
+
+        # Cria o gráfico de barras agrupado
+        fig_risco_combinado = px.bar(
+            df_risco_melted,
+            x='sedentarismo_nivel',
+            y='Percentual',
+            color='Condição de Risco',
+            barmode='group',
+            category_orders={'sedentarismo_nivel': LABELS_SED},
+            title="Prevalência de Obesidade e Hipertensão por Nível de Sedentarismo"
+        )
+
+        fig_risco_combinado.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
+        fig_risco_combinado.update_layout(yaxis_title="Percentual de Participantes (%)", xaxis_title="Nível de Sedentarismo")
+        
+        st.plotly_chart(fig_risco_combinado, use_container_width=True)
 
 with tab4:
     st.header("5. Conclusão e Segmento de Alto Risco")
