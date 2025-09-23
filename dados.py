@@ -238,9 +238,9 @@ with tab3:
             fig_tchol_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='colesterol_total', color='sedentarismo_nivel', title="Colesterol Total")
             st.plotly_chart(fig_tchol_sed, use_container_width=True)
 
-    # --- NOVO GRÁFICO ADICIONADO AQUI ---
+
     with st.expander("Gráfico Combinado: Riscos por Nível de Sedentarismo", expanded=True):
-        st.subheader("Percentual de Obesidade e Pressão Alta por Nível de Sedentarismo")
+        
 
         # Define as categorias de obesidade (Grau I, II ou III)
         categorias_obesidade = ['Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III']
