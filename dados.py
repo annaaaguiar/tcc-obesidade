@@ -6,7 +6,6 @@ import plotly.express as px
 st.set_page_config(
     layout="wide",
     page_title="Dashboard de Saúde - Análise de Risco",
-    page_icon="❤️"
 )
 
 # --- Constantes Globais ---
@@ -141,6 +140,9 @@ with tab1:
             sedentarismo_counts = df_filtrado['sedentarismo_nivel'].value_counts()
             fig_sedentarismo = px.pie(values=sedentarismo_counts.values, names=sedentarismo_counts.index, hole=0.3)
             st.plotly_chart(fig_sedentarismo, use_container_width=True)
+
+st.markdown("### Fontes de Dados")
+st.markdown("- Base de dados NHANES [https://www.cdc.gov/nchs/nhanes/index.htm](https://www.cdc.gov/nchs/nhanes/index.htm)")
 
 # --- ABA 2: OBESIDADE ---
 with tab2:
