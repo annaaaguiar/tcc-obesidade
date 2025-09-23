@@ -1,6 +1,4 @@
-Claro, aqui está o código completo com as correções aplicadas e sem comentários adicionais sobre as alterações.
 
-```python
 import streamlit as st
 import pandas as pd
 import plotly.express as px
