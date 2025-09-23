@@ -238,7 +238,7 @@ with tab3:
         with col_box_sed2:
             fig_ldl_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='ldl', color='sedentarismo_nivel', title="LDL")
             st.plotly_chart(fig_ldl_sed, use_container_width=True)
-        with col_box_3:
+        with col_box_sed3:
             fig_tchol_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='colesterol_total', color='sedentarismo_nivel', title="Colesterol Total")
             st.plotly_chart(fig_tchol_sed, use_container_width=True)
 
