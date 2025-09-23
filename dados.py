@@ -6,6 +6,7 @@ import plotly.express as px
 st.set_page_config(
     layout="wide",
     page_title="Dashboard de Saúde - Análise de Risco",
+    page_icon="🧬",
 )
 
 # --- Constantes Globais ---
