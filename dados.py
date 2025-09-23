@@ -170,6 +170,7 @@ def plotar_associacao(df, var_principal, var_secundaria, titulo):
 # --- ABA 1: RESUMO ---
 with tab1:
     st.header("1. Resumo da Amostra")
+    # ... (código da Aba 1 permanece o mesmo)
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Idade Média", f"{df_filtrado['idade_anos'].mean():.1f} anos")
     col2.metric("Idade Mínima", f"{df_filtrado['idade_anos'].min():.0f} anos")
@@ -194,11 +195,13 @@ with tab1:
             fig_sedentarismo = px.pie(values=sedentarismo_counts.values, names=sedentarismo_counts.index, hole=0.3)
             st.plotly_chart(fig_sedentarismo, use_container_width=True)
 
+
 st.markdown("### Fontes de Dados")
 st.markdown("- Base de dados NHANES [https://www.cdc.gov/nchs/nhanes/index.htm](https://www.cdc.gov/nchs/nhanes/index.htm)")
 
 with tab2:
     st.header("2. Análise de Obesidade")
+    # ... (código da Aba 2 permanece o mesmo)
     with st.expander("Distribuição de IMC por Gênero", expanded=True):
         fig_imc_genero = px.histogram(df_filtrado, x='obesidade_class', color='genero', barmode='group',
                                       category_orders={'obesidade_class': LABELS_IMC},
@@ -220,6 +223,7 @@ with tab2:
             fig_tchol = px.box(df_filtrado, x='obesidade_class', y='colesterol_total', color='obesidade_class', title="Colesterol Total")
             st.plotly_chart(fig_tchol, use_container_width=True)
 
+
 with tab3:
     st.header("3. Análise de Sedentarismo")
     with st.expander("Associações com Sedentarismo"):
@@ -234,56 +238,55 @@ with tab3:
         with col_box_sed2:
             fig_ldl_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='ldl', color='sedentarismo_nivel', title="LDL")
             st.plotly_chart(fig_ldl_sed, use_container_width=True)
-        with col_box_sed3:
+        with col_box_3:
             fig_tchol_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='colesterol_total', color='sedentarismo_nivel', title="Colesterol Total")
             st.plotly_chart(fig_tchol_sed, use_container_width=True)
 
-    # --- NOVO GRÁFICO ADICIONADO AQUI ---
-    with st.expander("Gráfico Combinado: Riscos por Nível de Sedentarismo", expanded=True):
-        st.subheader("Percentual de Obesidade e Pressão Alta por Nível de Sedentarismo")
-
-        # Define as categorias de obesidade (Grau I, II ou III)
+    # --- GRÁFICO COMBINADO ATUALIZADO ---
+    with st.expander("Análise Completa de Riscos por Nível de Sedentarismo", expanded=True):
+        
+        # Cria um dataframe temporário para as novas colunas de status
+        df_temp = df_filtrado.copy()
         categorias_obesidade = ['Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III']
+        df_temp['Status de Obesidade'] = df_temp['obesidade_class'].apply(lambda x: 'Obeso' if x in categorias_obesidade else 'Não Obeso')
+        df_temp['Status de Pressão Alta'] = df_temp['historico_pressao_alta_cat']
 
-        # Agrupa por nível de sedentarismo e calcula as métricas de interesse
-        # O argumento 'observed=True' é importante para grupos categóricos
-        df_risco_sedentarismo = df_filtrado.groupby('sedentarismo_nivel', observed=True).agg(
-            percentual_obesidade=('obesidade_class', lambda x: x.isin(categorias_obesidade).mean() * 100),
-            percentual_pressao_alta=('historico_pressao_alta_cat', lambda x: (x == 'Sim').mean() * 100)
-        ).reset_index()
+        # 1. Calcula a distribuição para Obesidade
+        ct_obesidade = pd.crosstab(df_temp['sedentarismo_nivel'], df_temp['Status de Obesidade'], normalize='index').mul(100).reset_index()
+        df_obesidade_melted = ct_obesidade.melt(id_vars='sedentarismo_nivel', var_name='Status', value_name='Percentual')
+        df_obesidade_melted['Condição'] = 'Status de Obesidade'
 
-        # Reorganiza o dataframe para o formato "longo", ideal para o Plotly
-        df_risco_melted = df_risco_sedentarismo.melt(
-            id_vars='sedentarismo_nivel',
-            value_vars=['percentual_obesidade', 'percentual_pressao_alta'],
-            var_name='Condição de Risco',
-            value_name='Percentual'
-        )
+        # 2. Calcula a distribuição para Pressão Alta
+        ct_pressao = pd.crosstab(df_temp['sedentarismo_nivel'], df_temp['Status de Pressão Alta'], normalize='index').mul(100).reset_index()
+        df_pressao_melted = ct_pressao.melt(id_vars='sedentarismo_nivel', var_name='Status', value_name='Percentual')
+        df_pressao_melted['Condição'] = 'Status de Pressão Alta'
         
-        # Mapeia os nomes das variáveis para rótulos mais amigáveis para a legenda do gráfico
-        df_risco_melted['Condição de Risco'] = df_risco_melted['Condição de Risco'].map({
-            'percentual_obesidade': 'Obesidade (Grau I-III)',
-            'percentual_pressao_alta': 'Pressão Alta (Histórico)'
-        })
+        # 3. Combina os dois dataframes
+        df_plot_final = pd.concat([df_obesidade_melted, df_pressao_melted])
 
-        # Cria o gráfico de barras agrupado
-        fig_risco_combinado = px.bar(
-            df_risco_melted,
-            x='sedentarismo_nivel',
-            y='Percentual',
-            color='Condição de Risco',
-            barmode='group',
-            category_orders={'sedentarismo_nivel': LABELS_SED},
-            title="Prevalência de Obesidade e Hipertensão por Nível de Sedentarismo"
+        # Cria o gráfico com facetas (subplots)
+        fig_risco_completo = px.bar(
+            df_plot_final,
+            x='Percentual',
+            y='sedentarismo_nivel',
+            color='Status',
+            facet_col='Condição', # Cria uma coluna de gráficos para cada 'Condição'
+            orientation='h',
+            title='Distribuição Percentual de Obesidade e Pressão Alta por Nível de Sedentarismo'
         )
 
-        fig_risco_combinado.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
-        fig_risco_combinado.update_layout(yaxis_title="Percentual de Participantes (%)", xaxis_title="Nível de Sedentarismo")
+        fig_risco_completo.update_traces(texttemplate='%{x:.1f}%')
+        fig_risco_completo.for_each_annotation(lambda a: a.update(text=a.text.split("=")[1])) # Limpa o título da faceta
+        fig_risco_completo.update_layout(
+            yaxis_title="Nível de Sedentarismo",
+            xaxis_title="Percentual de Participantes (%)"
+        )
         
-        st.plotly_chart(fig_risco_combinado, use_container_width=True)
+        st.plotly_chart(fig_risco_completo, use_container_width=True)
 
 with tab4:
     st.header("5. Conclusão e Segmento de Alto Risco")
+    # ... (código da Aba 4 permanece o mesmo)
     st.markdown("""
     ### Quem Apresenta Maior Risco Potencial?
     Com base na análise interativa dos dados, o grupo de maior risco é composto por **participantes obesos (especialmente Grau II e III) que também apresentam um alto nível de sedentarismo (mais de 8 horas sentados por dia).**
