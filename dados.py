@@ -121,13 +121,17 @@ def plotar_associacao(df, var_principal, var_secundaria, titulo):
         'y': 'Percentual',
         'color': var_secundaria,
         'barmode': 'group',
-        'text_auto': '.1f'  # --- CORREÇÃO APLICADA AQUI ---
     }
 
     if pd.api.types.is_categorical_dtype(df[var_principal]):
         fig_params['category_orders'] = {var_principal: df[var_principal].cat.categories.tolist()}
     
     fig = px.bar(df_melted, **fig_params)
+
+    # --- CORREÇÃO APLICADA AQUI ---
+    # Adiciona e formata o texto em cima das barras para incluir o sinal de '%'
+    fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
+    # --- FIM DA CORREÇÃO ---
 
     st.plotly_chart(fig, use_container_width=True)
     
