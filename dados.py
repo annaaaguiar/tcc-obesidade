@@ -194,6 +194,7 @@ with tab1:
             fig_sedentarismo = px.pie(values=sedentarismo_counts.values, names=sedentarismo_counts.index, hole=0.3)
             st.plotly_chart(fig_sedentarismo, use_container_width=True)
 
+
 st.markdown("### Fontes de Dados")
 st.markdown("- Base de dados NHANES [https://www.cdc.gov/nchs/nhanes/index.htm](https://www.cdc.gov/nchs/nhanes/index.htm)")
 
@@ -219,6 +220,46 @@ with tab2:
         with col_box3:
             fig_tchol = px.box(df_filtrado, x='obesidade_class', y='colesterol_total', color='obesidade_class', title="Colesterol Total")
             st.plotly_chart(fig_tchol, use_container_width=True)
+
+
+    with st.expander("Tempo Sentado por Status de Obesidade", expanded=True):
+        
+        # 1. Cria um dataframe temporário para a nova coluna de status
+        df_temp_obesidade = df_filtrado.copy()
+        
+        # 2. Define as listas para os dois grandes grupos
+        grupo_sobrepeso_obeso = ['Sobrepeso', 'Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III']
+        grupo_normal_abaixo = ['Abaixo do Peso', 'Peso Normal']
+        
+        # 3. Cria a nova coluna de classificação
+        def agrupar_status_obesidade(classe):
+            if classe in grupo_sobrepeso_obeso:
+                return 'Sobrepeso ou Obesidade'
+            elif classe in grupo_normal_abaixo:
+                return 'Peso Normal ou Abaixo'
+            return 'Outro'
+            
+        df_temp_obesidade['status_obesidade_agrupado'] = df_temp_obesidade['obesidade_class'].apply(agrupar_status_obesidade)
+
+        # 4. Filtra para manter apenas os dois grupos de interesse
+        df_para_plot = df_temp_obesidade[df_temp_obesidade['status_obesidade_agrupado'].isin(['Sobrepeso ou Obesidade', 'Peso Normal ou Abaixo'])]
+
+        # 5. Cria o gráfico Box Plot
+        fig_tempo_sentado = px.box(
+            df_para_plot,
+            x='status_obesidade_agrupado',
+            y='tempo_sentado_min',
+            color='status_obesidade_agrupado',
+            title="Distribuição do Tempo Sentado Diário por Grupo de Peso",
+            points="all" # Opcional: mostra todos os pontos de dados
+        )
+        
+        fig_tempo_sentado.update_layout(
+            xaxis_title="Grupo de Classificação de Peso",
+            yaxis_title="Tempo Sentado Diário (minutos)"
+        )
+        
+        st.plotly_chart(fig_tempo_sentado, use_container_width=True)
 
 with tab3:
     st.header("3. Análise de Sedentarismo")
