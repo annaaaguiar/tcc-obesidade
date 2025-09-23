@@ -221,8 +221,8 @@ with tab2:
             fig_tchol = px.box(df_filtrado, x='obesidade_class', y='colesterol_total', color='obesidade_class', title="Colesterol Total")
             st.plotly_chart(fig_tchol, use_container_width=True)
 
-
-    with st.expander("Tempo Sentado por Status de Obesidade", expanded=True):
+    # --- NOVO BLOCO COM A TABELA DE RESUMO ---
+    with st.expander("Resumo do Tempo Sentado por Status de Obesidade", expanded=True):
         
         # 1. Cria um dataframe temporário para a nova coluna de status
         df_temp_obesidade = df_filtrado.copy()
@@ -242,24 +242,31 @@ with tab2:
         df_temp_obesidade['status_obesidade_agrupado'] = df_temp_obesidade['obesidade_class'].apply(agrupar_status_obesidade)
 
         # 4. Filtra para manter apenas os dois grupos de interesse
-        df_para_plot = df_temp_obesidade[df_temp_obesidade['status_obesidade_agrupado'].isin(['Sobrepeso ou Obesidade', 'Peso Normal ou Abaixo'])]
+        df_para_analise = df_temp_obesidade[df_temp_obesidade['status_obesidade_agrupado'].isin(['Sobrepeso ou Obesidade', 'Peso Normal ou Abaixo'])]
 
-        # 5. Cria o gráfico Box Plot
-        fig_tempo_sentado = px.box(
-            df_para_plot,
-            x='status_obesidade_agrupado',
-            y='tempo_sentado_min',
-            color='status_obesidade_agrupado',
-            title="Distribuição do Tempo Sentado Diário por Grupo de Peso",
-            points="all" # Opcional: mostra todos os pontos de dados
-        )
+        # 5. Gera a tabela de resumo estatístico
+        tabela_resumo = df_para_analise.groupby('status_obesidade_agrupado')['tempo_sentado_min'].describe()
+
+        # 6. Seleciona e renomeia as colunas de interesse
+        tabela_resumo = tabela_resumo[['count', 'mean', '50%', 'std']].rename(columns={
+            'count': 'Nº de Participantes',
+            'mean': 'Média (minutos)',
+            '50%': 'Mediana (minutos)',
+            'std': 'Desvio Padrão (minutos)'
+        })
         
-        fig_tempo_sentado.update_layout(
-            xaxis_title="Grupo de Classificação de Peso",
-            yaxis_title="Tempo Sentado Diário (minutos)"
-        )
-        
-        st.plotly_chart(fig_tempo_sentado, use_container_width=True)
+        # 7. Adiciona uma coluna com a média em horas para facilitar a leitura
+        tabela_resumo['Média (horas)'] = tabela_resumo['Média (minutos)'] / 60
+
+        # 8. Exibe a tabela formatada
+        st.subheader("Análise do Tempo Sentado Diário por Grupo de Peso")
+        st.dataframe(tabela_resumo.style.format({
+            'Nº de Participantes': '{:,.0f}',
+            'Média (minutos)': '{:.1f}',
+            'Mediana (minutos)': '{:.1f}',
+            'Desvio Padrão (minutos)': '{:.1f}',
+            'Média (horas)': '{:.2f}'
+        }))
 
 with tab3:
     st.header("3. Análise de Sedentarismo")
