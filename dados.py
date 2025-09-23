@@ -1,3 +1,6 @@
+Claro, aqui está o código completo com as correções aplicadas e sem comentários adicionais sobre as alterações.
+
+```python
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -9,13 +12,8 @@ st.set_page_config(
 )
 
 # --- Constantes Globais ---
-# Mapa de Cores Padrão para Gênero
-COLOR_MAP = {'Homem': '#1f77b4', 'Mulher': '#e377c2'} # Azul e Rosa
-
-# Labels para classificação de IMC (CORREÇÃO APLICADA AQUI)
+COLOR_MAP = {'Homem': '#1f77b4', 'Mulher': '#e377c2'}
 LABELS_IMC = ['Abaixo do Peso', 'Peso Normal', 'Sobrepeso', 'Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III']
-
-# Labels para classificação de Sedentarismo
 LABELS_SED = ['Baixo (até 5h)', 'Moderado (5h a 8h)', 'Alto (acima de 8h)']
 
 # --- Carregamento e Processamento dos Dados (com Cache) ---
@@ -26,7 +24,6 @@ def load_data():
     A anotação @st.cache_data garante que esta função complexa execute apenas uma vez.
     """
     try:
-        # Carregando os arquivos CSV
         df_demo = pd.read_csv("DEMO.csv", on_bad_lines='skip', sep=';')
         df_bmx = pd.read_csv("BMX.csv", on_bad_lines='skip', sep=';')
         df_bpq = pd.read_csv("BPQ.csv", on_bad_lines='skip', sep=';')
@@ -35,7 +32,6 @@ def load_data():
         df_trigly = pd.read_csv("TRIGLY.csv", on_bad_lines='skip', sep=';')
         df_hdl = pd.read_csv("HDL.csv", on_bad_lines='skip', sep=';')
 
-        # Renomeando colunas para facilitar o uso
         df_demo = df_demo.rename(columns={'SEQN': 'id_participante', 'RIDAGEYR': 'idade_anos', 'RIAGENDR': 'genero'})
         df_bmx = df_bmx.rename(columns={'SEQN': 'id_participante', 'BMXWT': 'peso_kg', 'BMXHT': 'altura_cm','BMXBMI': 'imc', 'BMXWAIST': 'circunferencia_cintura_cm'})
         df_paq = df_paq.rename(columns={'SEQN': 'id_participante', 'PAD680': 'tempo_sentado_min'})
@@ -44,7 +40,6 @@ def load_data():
         df_trigly = df_trigly.rename(columns={'SEQN': 'id_participante', 'LBDLDL': 'ldl'})
         df_hdl = df_hdl.rename(columns={'SEQN': 'id_participante', 'LBDHDD': 'hdl'})
 
-        # Juntando os dataframes
         df_merged = df_demo[['id_participante', 'idade_anos', 'genero']].merge(df_bmx[['id_participante', 'imc']], on='id_participante', how='inner')
         df_merged = df_merged.merge(df_paq[['id_participante', 'tempo_sentado_min']], on='id_participante', how='inner')
         df_merged = df_merged.merge(df_bpq[['id_participante', 'historico_pressao_alta', 'historico_colesterol_alto', 'historico_doenca_cardiaca']], on='id_participante', how='inner')
@@ -52,27 +47,24 @@ def load_data():
         df_merged = df_merged.merge(df_trigly[['id_participante', 'ldl']], on='id_participante', how='left')
         df_merged = df_merged.merge(df_hdl[['id_participante', 'hdl']], on='id_participante', how='left')
 
-        # --- Limpeza e Padronização ---
         colunas_essenciais = ['imc', 'colesterol_total', 'ldl', 'hdl', 'tempo_sentado_min']
         df_merged.dropna(subset=colunas_essenciais, inplace=True)
         
         df_merged['genero'] = df_merged['genero'].replace({1: 'Homem', 2: 'Mulher'})
-
         df_merged['historico_doenca_cardiaca'] = df_merged['historico_doenca_cardiaca'].fillna(9)
         df_merged['idade_anos'] = pd.to_numeric(df_merged['idade_anos'], errors='coerce')
         df_merged['tempo_sentado_min'] = pd.to_numeric(df_merged['tempo_sentado_min'], errors='coerce')
         df_merged['tempo_sentado_min'] = df_merged['tempo_sentado_min'].fillna(df_merged['tempo_sentado_min'].median())
 
-        # --- Criação de Classificações (Features) ---
-        # Obesidade
         bins_imc = [0, 18.5, 24.9, 29.9, 34.9, 39.9, float('inf')]
         df_merged['obesidade_class'] = pd.cut(df_merged['imc'], bins=bins_imc, labels=LABELS_IMC, right=False)
 
-        # Sedentarismo
         sedentary_bins = [0, 300, 480, float('inf')]
         df_merged['sedentarismo_nivel'] = pd.cut(df_merged['tempo_sentado_min'], bins=sedentary_bins, labels=LABELS_SED, right=False)
+        if not pd.api.types.is_categorical_dtype(df_merged['sedentarismo_nivel']):
+            df_merged['sedentarismo_nivel'] = df_merged['sedentarismo_nivel'].astype('category')
+        df_merged['sedentarismo_nivel'] = df_merged['sedentarismo_nivel'].cat.add_categories(['Não Informado']).fillna('Não Informado')
 
-        # Históricos categóricos
         df_merged['historico_pressao_alta_cat'] = df_merged['historico_pressao_alta'].replace({1.0: 'Sim', 2.0: 'Não', 9.0: 'Não Sabe'})
         df_merged['historico_colesterol_alto_cat'] = df_merged['historico_colesterol_alto'].replace({1.0: 'Sim', 2.0: 'Não', 7.0: 'Não Sabe', 9.0: 'Não Sabe'}).fillna('Não Sabe')
         df_merged['historico_doenca_cardiaca_cat'] = df_merged['historico_doenca_cardiaca'].replace({1.0: 'Sim', 2.0: 'Não', 7.0: 'Não Sabe', 9.0: 'Não Sabe'}).fillna('Não Sabe')
@@ -150,7 +142,6 @@ with tab2:
 
     with st.expander("Distribuição de IMC por Gênero", expanded=True):
         fig_imc_genero = px.histogram(df_filtrado, x='obesidade_class', color='genero', barmode='group',
-                                      # A correção acontece aqui, usando a constante global LABELS_IMC
                                       category_orders={'obesidade_class': LABELS_IMC},
                                       color_discrete_map=COLOR_MAP)
         st.plotly_chart(fig_imc_genero, use_container_width=True)
@@ -158,7 +149,7 @@ with tab2:
     with st.expander("Tabelas e Gráficos de Associação com Obesidade"):
         def plotar_associacao(df, var_principal, var_secundaria, titulo):
             st.subheader(titulo)
-            crosstab = pd.crosstab(df[var_principal], df[var_secundaria], normalize='index') * 100
+            crosstab = pd.crosstab(df[var_principal], df[var_secundaria], normalize='index', dropna=False) * 100
             st.dataframe(crosstab.round(1))
             
             crosstab_plot = crosstab.reset_index()
@@ -248,4 +239,4 @@ with tab4:
             )
         else:
             st.warning("Nenhum participante com este perfil de alto risco foi encontrado na seleção de filtros atual. Tente ampliar os filtros na barra lateral (faixa etária, etc.).")
-
+```
