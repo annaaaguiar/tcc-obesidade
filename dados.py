@@ -111,11 +111,8 @@ def plotar_associacao(df, var_principal, var_secundaria, titulo):
     st.subheader(titulo)
     crosstab = pd.crosstab(df[var_principal], df[var_secundaria], normalize='index', dropna=False) * 100
     
-    # --- CORREÇÃO APLICADA AQUI ---
-    # Transforma o índice (ex: 'Baixo', 'Moderado') em uma coluna normal para exibição.
     crosstab_para_exibir = crosstab.reset_index()
     st.dataframe(crosstab_para_exibir.round(1))
-    # --- FIM DA CORREÇÃO ---
     
     df_melted = crosstab_para_exibir.melt(id_vars=var_principal, var_name=var_secundaria, value_name='Percentual')
     
@@ -124,7 +121,7 @@ def plotar_associacao(df, var_principal, var_secundaria, titulo):
         'y': 'Percentual',
         'color': var_secundaria,
         'barmode': 'group',
-        'text_auto': '.2s'
+        'text_auto': '.1f'  # --- CORREÇÃO APLICADA AQUI ---
     }
 
     if pd.api.types.is_categorical_dtype(df[var_principal]):
