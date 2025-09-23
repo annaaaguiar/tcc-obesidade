@@ -112,8 +112,16 @@ def plotar_associacao(df, var_principal, var_secundaria, titulo):
     crosstab = pd.crosstab(df[var_principal], df[var_secundaria], normalize='index', dropna=False) * 100
     
     crosstab_para_exibir = crosstab.reset_index()
-    st.dataframe(crosstab_para_exibir.round(1))
-    
+
+    # --- CORREÇÃO APLICADA AQUI ---
+    # Define o formato de porcentagem para as colunas de dados da tabela
+    colunas_de_percentual = {col: '{:.1f}%' for col in crosstab.columns}
+    st.dataframe(
+        crosstab_para_exibir.style.format(colunas_de_percentual),
+        hide_index=True
+    )
+    # --- FIM DA CORREÇÃO ---
+
     df_melted = crosstab_para_exibir.melt(id_vars=var_principal, var_name=var_secundaria, value_name='Percentual')
     
     fig_params = {
@@ -128,10 +136,7 @@ def plotar_associacao(df, var_principal, var_secundaria, titulo):
     
     fig = px.bar(df_melted, **fig_params)
 
-    # --- CORREÇÃO APLICADA AQUI ---
-    # Adiciona e formata o texto em cima das barras para incluir o sinal de '%'
     fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
-    # --- FIM DA CORREÇÃO ---
 
     st.plotly_chart(fig, use_container_width=True)
     
