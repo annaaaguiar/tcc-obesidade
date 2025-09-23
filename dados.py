@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -12,7 +11,7 @@ st.set_page_config(
 # --- Constantes Globais ---
 COLOR_MAP = {'Homem': '#1f77b4', 'Mulher': '#e377c2'}
 LABELS_IMC = ['Abaixo do Peso', 'Peso Normal', 'Sobrepeso', 'Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III']
-LABELS_SED = ['Baixo (até 5h)', 'Moderado (5h a 8h)', 'Alto (acima de 8h)']
+LABELS_SED = ['Baixo (até 5h)', 'Moderado (5h a 8h)', 'Alto (acima de 8h)', 'Não Informado']
 
 # --- Carregamento e Processamento dos Dados (com Cache) ---
 @st.cache_data
@@ -57,11 +56,18 @@ def load_data():
         bins_imc = [0, 18.5, 24.9, 29.9, 34.9, 39.9, float('inf')]
         df_merged['obesidade_class'] = pd.cut(df_merged['imc'], bins=bins_imc, labels=LABELS_IMC, right=False)
 
-        sedentary_bins = [0, 300, 480, float('inf')]
-        df_merged['sedentarismo_nivel'] = pd.cut(df_merged['tempo_sentado_min'], bins=sedentary_bins, labels=LABELS_SED, right=False)
-        if not pd.api.types.is_categorical_dtype(df_merged['sedentarismo_nivel']):
-            df_merged['sedentarismo_nivel'] = df_merged['sedentarismo_nivel'].astype('category')
-        df_merged['sedentarismo_nivel'] = df_merged['sedentarismo_nivel'].cat.add_categories(['Não Informado']).fillna('Não Informado')
+        def classificar_sedentarismo(minutos):
+            if pd.isna(minutos):
+                return 'Não Informado'
+            if minutos < 300:
+                return 'Baixo (até 5h)'
+            elif 300 <= minutos < 480:
+                return 'Moderado (5h a 8h)'
+            else:
+                return 'Alto (acima de 8h)'
+
+        df_merged['sedentarismo_nivel'] = df_merged['tempo_sentado_min'].apply(classificar_sedentarismo)
+        df_merged['sedentarismo_nivel'] = pd.Categorical(df_merged['sedentarismo_nivel'], categories=LABELS_SED, ordered=True)
 
         df_merged['historico_pressao_alta_cat'] = df_merged['historico_pressao_alta'].replace({1.0: 'Sim', 2.0: 'Não', 9.0: 'Não Sabe'})
         df_merged['historico_colesterol_alto_cat'] = df_merged['historico_colesterol_alto'].replace({1.0: 'Sim', 2.0: 'Não', 7.0: 'Não Sabe', 9.0: 'Não Sabe'}).fillna('Não Sabe')
@@ -100,6 +106,37 @@ st.markdown(f"Analisando **{len(df_filtrado)}** participantes selecionados.")
 
 # --- Abas para Organização ---
 tab1, tab2, tab3, tab4 = st.tabs(["Resumo da Amostra", "Análise de Obesidade", "Análise de Sedentarismo", "Conclusão e Risco"])
+
+def plotar_associacao(df, var_principal, var_secundaria, titulo):
+    st.subheader(titulo)
+    crosstab = pd.crosstab(df[var_principal], df[var_secundaria], normalize='index', dropna=False) * 100
+    
+    # --- CORREÇÃO APLICADA AQUI ---
+    # Transforma o índice (ex: 'Baixo', 'Moderado') em uma coluna normal para exibição.
+    crosstab_para_exibir = crosstab.reset_index()
+    st.dataframe(crosstab_para_exibir.round(1))
+    # --- FIM DA CORREÇÃO ---
+    
+    df_melted = crosstab_para_exibir.melt(id_vars=var_principal, var_name=var_secundaria, value_name='Percentual')
+    
+    fig_params = {
+        'x': var_principal,
+        'y': 'Percentual',
+        'color': var_secundaria,
+        'barmode': 'group',
+        'text_auto': '.2s'
+    }
+
+    if pd.api.types.is_categorical_dtype(df[var_principal]):
+        fig_params['category_orders'] = {var_principal: df[var_principal].cat.categories.tolist()}
+    
+    fig = px.bar(df_melted, **fig_params)
+
+    st.plotly_chart(fig, use_container_width=True)
+    
+    csv = crosstab.to_csv().encode('utf-8')
+    st.download_button(label=f"Exportar Tabela '{titulo}'", data=csv, file_name=f'associacao_{var_principal}_x_{var_secundaria}.csv', mime='text/csv')
+    st.markdown("---")
 
 # --- ABA 1: RESUMO ---
 with tab1:
@@ -145,21 +182,6 @@ with tab2:
         st.plotly_chart(fig_imc_genero, use_container_width=True)
 
     with st.expander("Tabelas e Gráficos de Associação com Obesidade"):
-        def plotar_associacao(df, var_principal, var_secundaria, titulo):
-            st.subheader(titulo)
-            crosstab = pd.crosstab(df[var_principal], df[var_secundaria], normalize='index', dropna=False) * 100
-            st.dataframe(crosstab.round(1))
-            
-            crosstab_plot = crosstab.reset_index()
-            df_melted = crosstab_plot.melt(id_vars=var_principal, var_name=var_secundaria, value_name='Percentual')
-            
-            fig = px.bar(df_melted, x=var_principal, y='Percentual', color=var_secundaria, barmode='group', text_auto='.2s')
-            st.plotly_chart(fig, use_container_width=True)
-            
-            csv = crosstab.to_csv().encode('utf-8')
-            st.download_button(label=f"Exportar Tabela '{titulo}'", data=csv, file_name=f'obesidade_x_{var_secundaria}.csv', mime='text/csv')
-            st.markdown("---")
-
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_pressao_alta_cat', 'Obesidade x Pressão Alta')
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_colesterol_alto_cat', 'Obesidade x Colesterol Alto')
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
@@ -237,4 +259,3 @@ with tab4:
             )
         else:
             st.warning("Nenhum participante com este perfil de alto risco foi encontrado na seleção de filtros atual. Tente ampliar os filtros na barra lateral (faixa etária, etc.).")
-
