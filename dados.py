@@ -212,10 +212,10 @@ with tab2:
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
 
         
-        with st.expander("Gráfico Combinado: Obesidade x Colesterol & Pressão", expanded=True):
+    with st.expander("Gráfico Combinado: Obesidade x Colesterol & Pressão", expanded=True):
             df_combinado = df_filtrado.groupby('obesidade_class', observed=True).agg(
-                colesterol_alto=('historico_colesterol_alto_cat', lambda x: (x == 'Sim').mean() * 100),
-                pressao_alta=('historico_pressao_alta_cat', lambda x: (x == 'Sim').mean() * 100)
+            colesterol_alto=('historico_colesterol_alto_cat', lambda x: (x == 'Sim').mean() * 100),
+            pressao_alta=('historico_pressao_alta_cat', lambda x: (x == 'Sim').mean() * 100)
             ).reset_index()
 
             df_meltado = df_combinado.melt(
