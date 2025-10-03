@@ -290,7 +290,7 @@ with tab2:
         )
         fig_imc_genero.update_layout(
             title_font_size=20, xaxis_title_font_size=16, yaxis_title_font_size=16,
-            legend_title_font_size=14, font=dict(size=12)
+            legend_title_font_size=14, font=dict(size=14)
         )
         st.plotly_chart(fig_imc_genero, use_container_width=True)
 
