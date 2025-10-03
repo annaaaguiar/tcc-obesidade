@@ -279,8 +279,8 @@ with tab2:
     with st.expander("Tabelas e Gráficos de Associação com Obesidade"):
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_pressao_alta_cat', 'Obesidade x Pressão Alta')
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_colesterol_alto_cat', 'Obesidade x Colesterol Alto')
+        plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
        
-
     # <<< NOVO GRÁFICO ADICIONADO AQUI >>>
     with st.expander("Gráfico Combinado: Obesidade x Colesterol & Pressão", expanded=True):
         # Seleciona apenas as colunas necessárias
@@ -316,8 +316,6 @@ with tab2:
         fig.update_layout(yaxis_title="Percentual (%)", xaxis_title="Classificação de Obesidade")
 
         st.plotly_chart(fig, use_container_width=True)
-
-     plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
 
     with st.expander("Boxplots de Perfil Lipídico por Classe de Obesidade"):
         col_box1, col_box2, col_box3 = st.columns(3)
