@@ -282,7 +282,7 @@ with tab2:
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
        
     # <<< NOVO GRÁFICO ADICIONADO AQUI >>>
-       st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
+    with st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
 
     fig = px.bar(
         df_final,
