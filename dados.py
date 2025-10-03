@@ -206,10 +206,41 @@ with tab2:
                                       category_orders={'obesidade_class': LABELS_IMC},
                                       color_discrete_map=COLOR_MAP)
         st.plotly_chart(fig_imc_genero, use_container_width=True)
-    with st.expander("Tabelas e Gráficos de Associação com Obesidade"):
-        plotar_associacao(df_filtrado, 'obesidade_class', 'historico_pressao_alta_cat', 'Obesidade x Pressão Alta')
-        plotar_associacao(df_filtrado, 'obesidade_class', 'historico_colesterol_alto_cat', 'Obesidade x Colesterol Alto')
-        plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
+    with st.expander("Gráfico Combinado: Obesidade x Colesterol & Pressão", expanded=True):
+    
+        # Seleciona apenas as colunas necessárias
+        df_comb = df_filtrado[['obesidade_class', 'historico_pressao_alta_cat', 'historico_colesterol_alto_cat']].copy()
+    
+        # Conta os percentuais por obesidade
+        tabela_pressao = pd.crosstab(df_comb['obesidade_class'], df_comb['historico_pressao_alta_cat'], normalize='index') * 100
+        tabela_colesterol = pd.crosstab(df_comb['obesidade_class'], df_comb['historico_colesterol_alto_cat'], normalize='index') * 100
+    
+        # Transforma em formato longo
+        df_pressao = tabela_pressao.reset_index().melt(id_vars='obesidade_class', var_name='Resposta', value_name='Percentual')
+        df_pressao['Indicador'] = 'Pressão Alta'
+    
+        df_colesterol = tabela_colesterol.reset_index().melt(id_vars='obesidade_class', var_name='Resposta', value_name='Percentual')
+        df_colesterol['Indicador'] = 'Colesterol Alto'
+    
+        # Junta as duas bases
+        df_final = pd.concat([df_pressao, df_colesterol])
+    
+        # Cria o gráfico
+        fig = px.bar(
+            df_final,
+            x='obesidade_class',
+            y='Percentual',
+            color='Resposta',
+            barmode='group',
+            facet_col='Indicador',  # Cria um painel para cada indicador
+            category_orders={'obesidade_class': LABELS_IMC},
+            title="Obesidade x Colesterol Alto & Pressão Alta"
+        )
+    
+        fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
+        fig.update_layout(yaxis_title="Percentual (%)", xaxis_title="Classificação de Obesidade")
+    
+        st.plotly_chart(fig, use_container_width=True)
     with st.expander("Boxplots de Perfil Lipídico por Classe de Obesidade"):
         col_box1, col_box2, col_box3 = st.columns(3)
         with col_box1:
