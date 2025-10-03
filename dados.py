@@ -282,7 +282,8 @@ with tab2:
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
        
     # <<< NOVO GRÁFICO ADICIONADO AQUI >>>
-    with st.expander("Gráfico Combinado: Obesidade x Colesterol & Pressão", expanded=True):
+    with st.expander("Obesidade x Colesterol Alto & Pressão Alta", expanded=True):
+    st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
         # Seleciona apenas as colunas necessárias
         df_comb = df_filtrado[['obesidade_class', 'historico_pressao_alta_cat', 'historico_colesterol_alto_cat']].copy()
 
