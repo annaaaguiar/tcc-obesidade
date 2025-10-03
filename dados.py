@@ -247,7 +247,7 @@ with tab1:
                 color=genero_counts.index,
                 color_discrete_map=COLOR_MAP
             )
-            fig_genero.update_layout(title_font_size=20, legend_title_font_size=16, font=dict(size=30))
+            fig_genero.update_layout(title_font_size=20, legend_title_font_size=16, font=dict(size=14))
             st.plotly_chart(fig_genero, use_container_width=True)
 
         with col_b:
@@ -290,7 +290,7 @@ with tab2:
         )
         fig_imc_genero.update_layout(
             title_font_size=20, xaxis_title_font_size=16, yaxis_title_font_size=16,
-            legend_title_font_size=14, font=dict(size=14)
+            legend_title_font_size=14, font=dict(size=30)
         )
         st.plotly_chart(fig_imc_genero, use_container_width=True)
 
