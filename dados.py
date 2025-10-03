@@ -247,7 +247,7 @@ with tab1:
                 color=genero_counts.index,
                 color_discrete_map=COLOR_MAP
             )
-            fig_genero.update_layout(title_font_size=20, legend_title_font_size=16, font=dict(size=14))
+            fig_genero.update_layout(title_font_size=20, legend_title_font_size=16, font=dict(size=30))
             st.plotly_chart(fig_genero, use_container_width=True)
 
         with col_b:
