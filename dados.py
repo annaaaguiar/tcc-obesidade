@@ -2,19 +2,19 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# config da página
+# --- Configuração da Página ---
 st.set_page_config(
     layout="wide",
     page_title="Dashboard de Saúde - Análise de Risco",
     page_icon="🧬",
 )
 
-# constantes
+# --- Constantes Globais ---
 COLOR_MAP = {'Homem': '#1f77b4', 'Mulher': '#e377c2'}
 LABELS_IMC = ['Abaixo do Peso', 'Peso Normal', 'Sobrepeso', 'Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III']
 LABELS_SED = ['Baixo (até 5h)', 'Moderado (5h a 8h)', 'Alto (acima de 8h)', 'Não Informado']
 
-# processamento com cache
+# --- Carregamento e Processamento dos Dados (com Cache) ---
 @st.cache_data
 def load_data():
     """
@@ -63,44 +63,66 @@ def load_data():
         df_merged['obesidade_class'] = pd.cut(df_merged['imc'], bins=bins_imc, labels=LABELS_IMC, right=False)
 
         def classificar_sedentarismo(minutos):
-            if pd.isna(minutos): return 'Não Informado'
-            if minutos < 300: return 'Baixo (até 5h)'
-            elif 300 <= minutos < 480: return 'Moderado (5h a 8h)'
-            else: return 'Alto (acima de 8h)'
+            if pd.isna(minutos):
+                return 'Não Informado'
+            if minutos < 300:
+                return 'Baixo (até 5h)'
+            elif 300 <= minutos < 480:
+                return 'Moderado (5h a 8h)'
+            else:
+                return 'Alto (acima de 8h)'
+
         df_merged['sedentarismo_nivel'] = df_merged['tempo_sentado_min'].apply(classificar_sedentarismo)
         df_merged['sedentarismo_nivel'] = pd.Categorical(df_merged['sedentarismo_nivel'], categories=LABELS_SED, ordered=True)
-        
+
         df_merged['historico_pressao_alta_cat'] = df_merged['historico_pressao_alta'].replace({1.0: 'Sim', 2.0: 'Não', 9.0: 'Não Sabe'})
         df_merged['historico_colesterol_alto_cat'] = df_merged['historico_colesterol_alto'].replace({1.0: 'Sim', 2.0: 'Não', 7.0: 'Não Sabe', 9.0: 'Não Sabe'}).fillna('Não Sabe')
         df_merged['historico_doenca_cardiaca_cat'] = df_merged['historico_doenca_cardiaca'].replace({1.0: 'Sim', 2.0: 'Não', 7.0: 'Não Sabe', 9.0: 'Não Sabe'}).fillna('Não Sabe')
 
         def classificar_colesterol_total(valor):
-            if pd.isna(valor): return 'Não disponível'
-            elif valor < 200: return 'Normal'
-            elif valor < 240: return 'Limítrofe'
-            else: return 'Alto'
+            if pd.isna(valor):
+                return 'Não disponível'
+            elif valor < 200:
+                return 'Normal'
+            elif valor < 240:
+                return 'Limítrofe'
+            else:
+                return 'Alto'
+
         df_merged['colesterol_total_class'] = df_merged['colesterol_total'].apply(classificar_colesterol_total)
 
         def classificar_ldl(valor):
-            if pd.isna(valor): return 'Não disponível'
-            elif valor < 100: return 'Ótimo'
-            elif valor < 130: return 'Próximo do ideal'
-            elif valor < 160: return 'Limítrofe'
-            elif valor < 190: return 'Alto'
-            else: return 'Muito alto'
+            if pd.isna(valor):
+                return 'Não disponível'
+            elif valor < 100:
+                return 'Ótimo'
+            elif valor < 130:
+                return 'Próximo do ideal'
+            elif valor < 160:
+                return 'Limítrofe'
+            elif valor < 190:
+                return 'Alto'
+            else:
+                return 'Muito alto'
+
         df_merged['ldl_class'] = df_merged['ldl'].apply(classificar_ldl)
 
         def classificar_hdl(row):
             valor, genero = row['hdl'], row['genero']
-            if pd.isna(valor): return 'Não disponível'
+            if pd.isna(valor):
+                return 'Não disponível'
             if genero == 'Homem':
-                if valor < 40: return 'Baixo'
-                else: return 'Normal'
-            else: # Mulher
-                if valor < 50: return 'Baixo'
-                else: return 'Normal'
-        df_merged['hdl_class'] = df_merged.apply(classificar_hdl, axis=1)
+                if valor < 40:
+                    return 'Baixo'
+                else:
+                    return 'Normal'
+            else:  # Mulher
+                if valor < 50:
+                    return 'Baixo'
+                else:
+                    return 'Normal'
 
+        df_merged['hdl_class'] = df_merged.apply(classificar_hdl, axis=1)
         return df_merged
 
     except FileNotFoundError as e:
@@ -113,14 +135,35 @@ if df.empty:
     st.warning("Nenhum dado encontrado após a aplicação dos filtros rigorosos. Verifique se todos os arquivos CSV necessários estão presentes.")
     st.stop()
 
-# filtro
+# --- Barra Lateral de Filtros ---
 st.sidebar.header("Filtros Interativos")
-genero_selecionado = st.sidebar.multiselect("Gênero", options=df['genero'].unique(), default=df['genero'].unique())
+
+genero_selecionado = st.sidebar.multiselect(
+    "Gênero",
+    options=df['genero'].unique(),
+    default=df['genero'].unique()
+)
+
 idade_min = int(df['idade_anos'].min())
 idade_max = int(df['idade_anos'].max())
-faixa_etaria = st.sidebar.slider("Faixa Etária", min_value=idade_min, max_value=idade_max, value=(idade_min, idade_max))
-obesidade_selecionada = st.sidebar.multiselect("Classificação de Obesidade", options=df['obesidade_class'].cat.categories, default=df['obesidade_class'].cat.categories)
-sedentarismo_selecionado = st.sidebar.multiselect("Nível de Sedentarismo", options=df['sedentarismo_nivel'].cat.categories, default=df['sedentarismo_nivel'].cat.categories)
+faixa_etaria = st.sidebar.slider(
+    "Faixa Etária",
+    min_value=idade_min,
+    max_value=idade_max,
+    value=(idade_min, idade_max)
+)
+
+obesidade_selecionada = st.sidebar.multiselect(
+    "Classificação de Obesidade",
+    options=df['obesidade_class'].cat.categories,
+    default=df['obesidade_class'].cat.categories
+)
+
+sedentarismo_selecionado = st.sidebar.multiselect(
+    "Nível de Sedentarismo",
+    options=df['sedentarismo_nivel'].cat.categories,
+    default=df['sedentarismo_nivel'].cat.categories
+)
 
 df_filtrado = df[
     (df['genero'].isin(genero_selecionado)) &
@@ -129,25 +172,24 @@ df_filtrado = df[
     (df['sedentarismo_nivel'].isin(sedentarismo_selecionado))
 ]
 
-# título
+# --- Título Principal ---
 st.title("Dashboard Interativo: Análise de Obesidade, Sedentarismo e Riscos Associados")
 st.markdown(f"Analisando **{len(df_filtrado)}** participantes selecionados (base de dados completa).")
 
-#classificação por categoria
+# --- Abas para Organização ---
 tab1, tab2, tab3, tab4 = st.tabs(["Resumo da Amostra", "Análise de Obesidade", "Análise de Sedentarismo", "Conclusão e Risco"])
 
 def plotar_associacao(df, var_principal, var_secundaria, titulo):
     st.subheader(titulo)
     crosstab = pd.crosstab(df[var_principal], df[var_secundaria], normalize='index', dropna=False) * 100
-    
     crosstab_para_exibir = crosstab.reset_index()
-    
+
     colunas_de_percentual = {col: '{:.1f}%' for col in crosstab.columns}
     st.dataframe(
         crosstab_para_exibir.style.format(colunas_de_percentual),
         hide_index=True
     )
-    
+
     df_melted = crosstab_para_exibir.melt(id_vars=var_principal, var_name=var_secundaria, value_name='Percentual')
     
     fig_params = {
@@ -156,16 +198,20 @@ def plotar_associacao(df, var_principal, var_secundaria, titulo):
         'color': var_secundaria,
         'barmode': 'group',
     }
-
     if pd.api.types.is_categorical_dtype(df[var_principal]):
         fig_params['category_orders'] = {var_principal: df[var_principal].cat.categories.tolist()}
-    
+
     fig = px.bar(df_melted, **fig_params)
     fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
-    
+
     csv = crosstab.to_csv().encode('utf-8')
-    st.download_button(label=f"Exportar Tabela '{titulo}'", data=csv, file_name=f'associacao_{var_principal}_x_{var_secundaria}.csv', mime='text/csv')
+    st.download_button(
+        label=f"Exportar Tabela '{titulo}'",
+        data=csv,
+        file_name=f'associacao_{var_principal}_x_{var_secundaria}.csv',
+        mime='text/csv'
+    )
     st.markdown("---")
 
 # --- ABA 1: RESUMO ---
@@ -177,41 +223,67 @@ with tab1:
     col3.metric("Idade Máxima", f"{df_filtrado['idade_anos'].max():.0f} anos")
     col4.metric("Desvio Padrão (Idade)", f"{df_filtrado['idade_anos'].std():.1f}")
     st.markdown("---")
+
     with st.expander("Gráficos de Distribuição Percentual", expanded=True):
         col_a, col_b, col_c = st.columns(3)
+
         with col_a:
             st.subheader("Distribuição por Gênero")
             genero_counts = df_filtrado['genero'].value_counts()
-            fig_genero = px.pie(values=genero_counts.values, names=genero_counts.index, hole=0.3, color=genero_counts.index, color_discrete_map=COLOR_MAP)
+            fig_genero = px.pie(
+                values=genero_counts.values,
+                names=genero_counts.index,
+                hole=0.3,
+                color=genero_counts.index,
+                color_discrete_map=COLOR_MAP
+            )
             st.plotly_chart(fig_genero, use_container_width=True)
+
         with col_b:
             st.subheader("Percentual por Obesidade")
             obesidade_counts = df_filtrado['obesidade_class'].value_counts()
-            fig_obesidade = px.pie(values=obesidade_counts.values, names=obesidade_counts.index, hole=0.3)
+            fig_obesidade = px.pie(
+                values=obesidade_counts.values,
+                names=obesidade_counts.index,
+                hole=0.3
+            )
             st.plotly_chart(fig_obesidade, use_container_width=True)
+
         with col_c:
             st.subheader("Percentual de Sedentarismo")
             sedentarismo_counts = df_filtrado['sedentarismo_nivel'].value_counts()
-            fig_sedentarismo = px.pie(values=sedentarismo_counts.values, names=sedentarismo_counts.index, hole=0.3)
+            fig_sedentarismo = px.pie(
+                values=sedentarismo_counts.values,
+                names=sedentarismo_counts.index,
+                hole=0.3
+            )
             st.plotly_chart(fig_sedentarismo, use_container_width=True)
 
-
-st.markdown("### Fontes de Dados")
-st.markdown("- Base de dados NHANES [https://www.cdc.gov/nchs/nhanes/index.htm](https://www.cdc.gov/nchs/nhanes/index.htm)")
+    st.markdown("### Fontes de Dados")
+    st.markdown("- Base de dados NHANES [https://www.cdc.gov/nchs/nhanes/index.htm](https://www.cdc.gov/nchs/nhanes/index.htm)")
 
 with tab2:
     st.header("2. Análise de Obesidade")
+
     with st.expander("Distribuição de IMC por Gênero", expanded=True):
-        fig_imc_genero = px.histogram(df_filtrado, x='obesidade_class', color='genero', barmode='group',
-                                      category_orders={'obesidade_class': LABELS_IMC},
-                                      color_discrete_map=COLOR_MAP)
+        fig_imc_genero = px.histogram(
+            df_filtrado,
+            x='obesidade_class',
+            color='genero',
+            barmode='group',
+            category_orders={'obesidade_class': LABELS_IMC},
+            color_discrete_map=COLOR_MAP
+        )
         st.plotly_chart(fig_imc_genero, use_container_width=True)
+
     with st.expander("Tabelas e Gráficos de Associação com Obesidade"):
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_pressao_alta_cat', 'Obesidade x Pressão Alta')
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_colesterol_alto_cat', 'Obesidade x Colesterol Alto')
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
+
     with st.expander("Boxplots de Perfil Lipídico por Classe de Obesidade"):
         col_box1, col_box2, col_box3 = st.columns(3)
+
         with col_box1:
             fig_hdl = px.box(df_filtrado, x='obesidade_class', y='hdl', color='obesidade_class', title="HDL")
             st.plotly_chart(fig_hdl, use_container_width=True)
@@ -224,7 +296,6 @@ with tab2:
 
     # --- NOVO BLOCO COM A TABELA DE RESUMO ---
     with st.expander("Resumo do Tempo Sentado por Status de Obesidade", expanded=True):
-        
         # 1. Cria um dataframe temporário para a nova coluna de status
         df_temp_obesidade = df_filtrado.copy()
         
@@ -241,13 +312,13 @@ with tab2:
             return 'Outro'
             
         df_temp_obesidade['status_obesidade_agrupado'] = df_temp_obesidade['obesidade_class'].apply(agrupar_status_obesidade)
-
+        
         # 4. Filtra para manter apenas os dois grupos de interesse
         df_para_analise = df_temp_obesidade[df_temp_obesidade['status_obesidade_agrupado'].isin(['Sobrepeso ou Obesidade', 'Peso Normal ou Abaixo'])]
-
+        
         # 5. Gera a tabela de resumo estatístico
         tabela_resumo = df_para_analise.groupby('status_obesidade_agrupado')['tempo_sentado_min'].describe()
-
+        
         # 6. Seleciona e renomeia as colunas de interesse
         tabela_resumo = tabela_resumo[['count', 'mean', '50%', 'std']].rename(columns={
             'count': 'Nº de Participantes',
@@ -258,7 +329,7 @@ with tab2:
         
         # 7. Adiciona uma coluna com a média em horas para facilitar a leitura
         tabela_resumo['Média (horas)'] = tabela_resumo['Média (minutos)'] / 60
-
+        
         # 8. Exibe a tabela formatada
         st.subheader("Análise do Tempo Sentado Diário por Grupo de Peso")
         st.dataframe(tabela_resumo.style.format({
@@ -269,12 +340,15 @@ with tab2:
             'Média (horas)': '{:.2f}'
         }))
 
+
 with tab3:
     st.header("3. Análise de Sedentarismo")
+
     with st.expander("Associações com Sedentarismo"):
         plotar_associacao(df_filtrado, 'sedentarismo_nivel', 'obesidade_class', 'Sedentarismo x Obesidade')
         plotar_associacao(df_filtrado, 'sedentarismo_nivel', 'historico_pressao_alta_cat', 'Sedentarismo x Pressão Alta')
         plotar_associacao(df_filtrado, 'sedentarismo_nivel', 'historico_colesterol_alto_cat', 'Sedentarismo x Colesterol Alto')
+
     with st.expander("Boxplots de Perfil Lipídico por Nível de Sedentarismo"):
         col_box_sed1, col_box_sed2, col_box_sed3 = st.columns(3)
         with col_box_sed1:
@@ -287,10 +361,7 @@ with tab3:
             fig_tchol_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='colesterol_total', color='sedentarismo_nivel', title="Colesterol Total")
             st.plotly_chart(fig_tchol_sed, use_container_width=True)
 
-
     with st.expander("Gráfico Combinado: Riscos por Nível de Sedentarismo", expanded=True):
-        
-
         # Define as categorias de obesidade (Grau I, II ou III)
         categorias_obesidade = ['Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III']
 
@@ -308,7 +379,7 @@ with tab3:
             var_name='Condição de Risco',
             value_name='Percentual'
         )
-        
+
         # Mapeia os nomes das variáveis para rótulos mais amigáveis para a legenda do gráfico
         df_risco_melted['Condição de Risco'] = df_risco_melted['Condição de Risco'].map({
             'percentual_obesidade': 'Obesidade (Grau I-III)',
@@ -325,22 +396,23 @@ with tab3:
             category_orders={'sedentarismo_nivel': LABELS_SED},
             title="Prevalência de Obesidade e Hipertensão por Nível de Sedentarismo"
         )
-
         fig_risco_combinado.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
         fig_risco_combinado.update_layout(yaxis_title="Percentual de Participantes (%)", xaxis_title="Nível de Sedentarismo")
-        
         st.plotly_chart(fig_risco_combinado, use_container_width=True)
+
 
 with tab4:
     st.header("5. Conclusão e Segmento de Alto Risco")
     st.markdown("""
     ### Quem Apresenta Maior Risco Potencial?
+
     Com base na análise interativa dos dados, o grupo de maior risco é composto por **participantes obesos (especialmente Grau II e III) que também apresentam um alto nível de sedentarismo (mais de 8 horas sentados por dia).**
     Este grupo tende a exibir um perfil lipídico mais desfavorável e uma maior prevalência de histórico de pressão e colesterol altos, fatores associados a maior risco para eventos cardiovasculares.
     """)
     st.info("Dica: Use os filtros na barra lateral para explorar diferentes segmentos e validar estas conclusões.")
     st.markdown("---")
     st.subheader("Explorar Participantes com Alto Risco")
+
     if st.checkbox("Clique aqui para filtrar participantes com Obesidade Grau II/III E alto nível de sedentarismo"):
         df_alto_risco = df_filtrado[
             (df_filtrado['obesidade_class'].isin(['Obesidade Grau II', 'Obesidade Grau III'])) &
@@ -349,8 +421,9 @@ with tab4:
         if not df_alto_risco.empty:
             st.success(f"**Encontrados {len(df_alto_risco)} participantes de alto risco dentro da seleção atual.**")
             colunas_risco = [
-                'idade_anos', 'genero', 'imc', 'obesidade_class', 'tempo_sentado_min', 
-                'sedentarismo_nivel', 'historico_pressao_alta_cat', 'historico_colesterol_alto_cat',
+                'idade_anos', 'genero', 'imc', 'obesidade_class',
+                'tempo_sentado_min', 'sedentarismo_nivel',
+                'historico_pressao_alta_cat', 'historico_colesterol_alto_cat',
                 'hdl', 'ldl', 'colesterol_total'
             ]
             st.dataframe(df_alto_risco[colunas_risco])
