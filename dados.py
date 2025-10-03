@@ -282,27 +282,7 @@ with tab2:
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
        
     # <<< NOVO GRÁFICO ADICIONADO AQUI >>>
-    with st.expander("Obesidade x Colesterol Alto & Pressão Alta", expanded=True):
-        st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
-        
-        # Seleciona apenas as colunas necessárias
-        df_comb = df_filtrado[['obesidade_class', 'historico_pressao_alta_cat', 'historico_colesterol_alto_cat']].copy()
-
-        # Conta os percentuais por obesidade
-        tabela_pressao = pd.crosstab(df_comb['obesidade_class'], df_comb['historico_pressao_alta_cat'], normalize='index') * 100
-        tabela_colesterol = pd.crosstab(df_comb['obesidade_class'], df_comb['historico_colesterol_alto_cat'], normalize='index') * 100
-
-        # Transforma em formato longo
-        df_pressao = tabela_pressao.reset_index().melt(id_vars='obesidade_class', var_name='Resposta', value_name='Percentual')
-        df_pressao['Indicador'] = 'Pressão Alta'
-
-        df_colesterol = tabela_colesterol.reset_index().melt(id_vars='obesidade_class', var_name='Resposta', value_name='Percentual')
-        df_colesterol['Indicador'] = 'Colesterol Alto'
-
-        # Junta as duas bases
-        df_final = pd.concat([df_pressao, df_colesterol])
-
-       #Cria o gráfico
+    with st.expander("Visualizar gráfico combinado", expanded=True):
     st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
 
     fig = px.bar(
@@ -311,14 +291,14 @@ with tab2:
         y='Percentual',
         color='Resposta',
         barmode='group',
-        facet_col='Indicador',  # Cria um painel para cada indicador
+        facet_col='Indicador',
         category_orders={'obesidade_class': LABELS_IMC}
     )
 
     fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
     fig.update_layout(
-    yaxis_title="Percentual (%)",
-    xaxis_title="Classificação de Obesidade"
+        yaxis_title="Percentual (%)",
+        xaxis_title="Classificação de Obesidade"
     )
 
     st.plotly_chart(fig, use_container_width=True)
