@@ -309,7 +309,7 @@ with tab2:
             barmode='group',
             facet_col='Indicador',  # Cria um painel para cada indicador
             category_orders={'obesidade_class': LABELS_IMC},
-            title="Obesidade x Colesterol Alto & Pressão Alta"
+            st.subheader="Obesidade x Colesterol Alto & Pressão Alta"
         )
 
         fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
