@@ -203,6 +203,16 @@ def plotar_associacao(df, var_principal, var_secundaria, titulo):
 
     fig = px.bar(df_melted, **fig_params)
     fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
+    
+    # Atualização de fonte para esta função
+    fig.update_layout(
+        title_font_size=20,
+        xaxis_title_font_size=16,
+        yaxis_title_font_size=16,
+        legend_title_font_size=14,
+        font=dict(size=12)
+    )
+    
     st.plotly_chart(fig, use_container_width=True)
 
     csv = crosstab.to_csv().encode('utf-8')
@@ -237,6 +247,7 @@ with tab1:
                 color=genero_counts.index,
                 color_discrete_map=COLOR_MAP
             )
+            fig_genero.update_layout(title_font_size=20, legend_title_font_size=16, font=dict(size=14))
             st.plotly_chart(fig_genero, use_container_width=True)
 
         with col_b:
@@ -247,6 +258,7 @@ with tab1:
                 names=obesidade_counts.index,
                 hole=0.3
             )
+            fig_obesidade.update_layout(title_font_size=20, legend_title_font_size=16, font=dict(size=14))
             st.plotly_chart(fig_obesidade, use_container_width=True)
 
         with col_c:
@@ -257,6 +269,7 @@ with tab1:
                 names=sedentarismo_counts.index,
                 hole=0.3
             )
+            fig_sedentarismo.update_layout(title_font_size=20, legend_title_font_size=16, font=dict(size=14))
             st.plotly_chart(fig_sedentarismo, use_container_width=True)
 
     st.markdown("### Fontes de Dados")
@@ -272,7 +285,12 @@ with tab2:
             color='genero',
             barmode='group',
             category_orders={'obesidade_class': LABELS_IMC},
-            color_discrete_map=COLOR_MAP
+            color_discrete_map=COLOR_MAP,
+            title="Distribuição de IMC por Gênero"
+        )
+        fig_imc_genero.update_layout(
+            title_font_size=20, xaxis_title_font_size=16, yaxis_title_font_size=16,
+            legend_title_font_size=14, font=dict(size=12)
         )
         st.plotly_chart(fig_imc_genero, use_container_width=True)
 
@@ -280,54 +298,21 @@ with tab2:
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_pressao_alta_cat', 'Obesidade x Pressão Alta')
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_colesterol_alto_cat', 'Obesidade x Colesterol Alto')
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
-       
-    # <<< NOVO GRÁFICO ADICIONADO AQUI >>>
-    with st.expander("Gráfico Combinado: Obesidade x Colesterol & Pressão", expanded=True):
-        st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
-        # Seleciona apenas as colunas necessárias
-        df_comb = df_filtrado[['obesidade_class', 'historico_pressao_alta_cat', 'historico_colesterol_alto_cat']].copy()
 
-        # Conta os percentuais por obesidade
-        tabela_pressao = pd.crosstab(df_comb['obesidade_class'], df_comb['historico_pressao_alta_cat'], normalize='index') * 100
-        tabela_colesterol = pd.crosstab(df_comb['obesidade_class'], df_comb['historico_colesterol_alto_cat'], normalize='index') * 100
-
-        # Transforma em formato longo
-        df_pressao = tabela_pressao.reset_index().melt(id_vars='obesidade_class', var_name='Resposta', value_name='Percentual')
-        df_pressao['Indicador'] = 'Pressão Alta'
-
-        df_colesterol = tabela_colesterol.reset_index().melt(id_vars='obesidade_class', var_name='Resposta', value_name='Percentual')
-        df_colesterol['Indicador'] = 'Colesterol Alto'
-
-        # Junta as duas bases
-        df_final = pd.concat([df_pressao, df_colesterol])
-
-        # Cria o gráfico
-        fig = px.bar(
-            df_final,
-            x='obesidade_class',
-            y='Percentual',
-            color='Resposta',
-            barmode='group',
-            facet_col='Indicador',  # Cria um painel para cada indicador
-            category_orders={'obesidade_class': LABELS_IMC}
-        )
-
-        fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
-        fig.update_layout(yaxis_title="Percentual (%)", xaxis_title="Classificação de Obesidade")
-
-        st.plotly_chart(fig, use_container_width=True)
-        
     with st.expander("Boxplots de Perfil Lipídico por Classe de Obesidade"):
         col_box1, col_box2, col_box3 = st.columns(3)
 
         with col_box1:
             fig_hdl = px.box(df_filtrado, x='obesidade_class', y='hdl', color='obesidade_class', title="HDL")
+            fig_hdl.update_layout(title_font_size=20, xaxis_title_font_size=16, yaxis_title_font_size=16, font=dict(size=12))
             st.plotly_chart(fig_hdl, use_container_width=True)
         with col_box2:
             fig_ldl = px.box(df_filtrado, x='obesidade_class', y='ldl', color='obesidade_class', title="LDL")
+            fig_ldl.update_layout(title_font_size=20, xaxis_title_font_size=16, yaxis_title_font_size=16, font=dict(size=12))
             st.plotly_chart(fig_ldl, use_container_width=True)
         with col_box3:
             fig_tchol = px.box(df_filtrado, x='obesidade_class', y='colesterol_total', color='obesidade_class', title="Colesterol Total")
+            fig_tchol.update_layout(title_font_size=20, xaxis_title_font_size=16, yaxis_title_font_size=16, font=dict(size=12))
             st.plotly_chart(fig_tchol, use_container_width=True)
 
     with st.expander("Resumo do Tempo Sentado por Status de Obesidade", expanded=True):
@@ -367,7 +352,43 @@ with tab2:
             'Média (horas)': '{:.2f}'
         }))
 
-    
+    with st.expander("Gráfico Combinado: Obesidade x Colesterol & Pressão", expanded=True):
+        df_comb = df_filtrado[['obesidade_class', 'historico_pressao_alta_cat', 'historico_colesterol_alto_cat']].copy()
+
+        tabela_pressao = pd.crosstab(df_comb['obesidade_class'], df_comb['historico_pressao_alta_cat'], normalize='index') * 100
+        tabela_colesterol = pd.crosstab(df_comb['obesidade_class'], df_comb['historico_colesterol_alto_cat'], normalize='index') * 100
+
+        df_pressao = tabela_pressao.reset_index().melt(id_vars='obesidade_class', var_name='Resposta', value_name='Percentual')
+        df_pressao['Indicador'] = 'Pressão Alta'
+
+        df_colesterol = tabela_colesterol.reset_index().melt(id_vars='obesidade_class', var_name='Resposta', value_name='Percentual')
+        df_colesterol['Indicador'] = 'Colesterol Alto'
+
+        df_final = pd.concat([df_pressao, df_colesterol])
+
+        fig = px.bar(
+            df_final,
+            x='obesidade_class',
+            y='Percentual',
+            color='Resposta',
+            barmode='group',
+            facet_col='Indicador',
+            category_orders={'obesidade_class': LABELS_IMC},
+            title="Obesidade x Colesterol Alto & Pressão Alta"
+        )
+
+        fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
+        fig.update_layout(
+            yaxis_title="Percentual (%)", 
+            xaxis_title="Classificação de Obesidade",
+            title_font_size=20,
+            xaxis_title_font_size=16,
+            yaxis_title_font_size=16,
+            legend_title_font_size=14,
+            font=dict(size=12)
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
 with tab3:
     st.header("3. Análise de Sedentarismo")
@@ -381,26 +402,25 @@ with tab3:
         col_box_sed1, col_box_sed2, col_box_sed3 = st.columns(3)
         with col_box_sed1:
             fig_hdl_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='hdl', color='sedentarismo_nivel', title="HDL")
+            fig_hdl_sed.update_layout(title_font_size=20, xaxis_title_font_size=16, yaxis_title_font_size=16, font=dict(size=12))
             st.plotly_chart(fig_hdl_sed, use_container_width=True)
         with col_box_sed2:
             fig_ldl_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='ldl', color='sedentarismo_nivel', title="LDL")
+            fig_ldl_sed.update_layout(title_font_size=20, xaxis_title_font_size=16, yaxis_title_font_size=16, font=dict(size=12))
             st.plotly_chart(fig_ldl_sed, use_container_width=True)
         with col_box_sed3:
             fig_tchol_sed = px.box(df_filtrado, x='sedentarismo_nivel', y='colesterol_total', color='sedentarismo_nivel', title="Colesterol Total")
+            fig_tchol_sed.update_layout(title_font_size=20, xaxis_title_font_size=16, yaxis_title_font_size=16, font=dict(size=12))
             st.plotly_chart(fig_tchol_sed, use_container_width=True)
 
     with st.expander("Gráfico Combinado: Riscos por Nível de Sedentarismo", expanded=True):
-        # Define as categorias de obesidade (Grau I, II ou III)
         categorias_obesidade = ['Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III']
 
-        # Agrupa por nível de sedentarismo e calcula as métricas de interesse
-        # O argumento 'observed=True' é importante para grupos categóricos
         df_risco_sedentarismo = df_filtrado.groupby('sedentarismo_nivel', observed=True).agg(
             percentual_obesidade=('obesidade_class', lambda x: x.isin(categorias_obesidade).mean() * 100),
             percentual_pressao_alta=('historico_pressao_alta_cat', lambda x: (x == 'Sim').mean() * 100)
         ).reset_index()
 
-        # Reorganiza o dataframe para o formato "longo", ideal para o Plotly
         df_risco_melted = df_risco_sedentarismo.melt(
             id_vars='sedentarismo_nivel',
             value_vars=['percentual_obesidade', 'percentual_pressao_alta'],
@@ -408,13 +428,11 @@ with tab3:
             value_name='Percentual'
         )
 
-        # Mapeia os nomes das variáveis para rótulos mais amigáveis para a legenda do gráfico
         df_risco_melted['Condição de Risco'] = df_risco_melted['Condição de Risco'].map({
             'percentual_obesidade': 'Obesidade (Grau I-III)',
             'percentual_pressao_alta': 'Pressão Alta (Histórico)'
         })
 
-        # Cria o gráfico de barras agrupado
         fig_risco_combinado = px.bar(
             df_risco_melted,
             x='sedentarismo_nivel',
@@ -425,9 +443,16 @@ with tab3:
             title="Prevalência de Obesidade e Hipertensão por Nível de Sedentarismo"
         )
         fig_risco_combinado.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
-        fig_risco_combinado.update_layout(yaxis_title="Percentual de Participantes (%)", xaxis_title="Nível de Sedentarismo")
+        fig_risco_combinado.update_layout(
+            yaxis_title="Percentual de Participantes (%)", 
+            xaxis_title="Nível de Sedentarismo",
+            title_font_size=20,
+            xaxis_title_font_size=16,
+            yaxis_title_font_size=16,
+            legend_title_font_size=14,
+            font=dict(size=12)
+        )
         st.plotly_chart(fig_risco_combinado, use_container_width=True)
-
 
 with tab4:
     st.header("5. Conclusão e Segmento de Alto Risco")
