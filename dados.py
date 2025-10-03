@@ -283,7 +283,8 @@ with tab2:
        
     # <<< NOVO GRÁFICO ADICIONADO AQUI >>>
     with st.expander("Obesidade x Colesterol Alto & Pressão Alta", expanded=True):
-    st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
+        st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
+        
         # Seleciona apenas as colunas necessárias
         df_comb = df_filtrado[['obesidade_class', 'historico_pressao_alta_cat', 'historico_colesterol_alto_cat']].copy()
 
