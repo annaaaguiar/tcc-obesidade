@@ -206,10 +206,11 @@ with tab2:
                                       category_orders={'obesidade_class': LABELS_IMC},
                                       color_discrete_map=COLOR_MAP)
         st.plotly_chart(fig_imc_genero, use_container_width=True)
+        
    with st.expander("Tabelas e Gráficos de Associação com Obesidade"):
-        plotar_associacao(df_filtrado, 'obesidade_class', 'historico_pressao_alta_cat', 'Obesidade x Pressão Alta')
-        plotar_associacao(df_filtrado, 'obesidade_class', 'historico_colesterol_alto_cat', 'Obesidade x Colesterol Alto')
-        plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
+            plotar_associacao(df_filtrado, 'obesidade_class', 'historico_pressao_alta_cat', 'Obesidade x Pressão Alta')
+            plotar_associacao(df_filtrado, 'obesidade_class', 'historico_colesterol_alto_cat', 'Obesidade x Colesterol Alto')
+            plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
 
         
     with st.expander("Gráfico Combinado: Obesidade x Colesterol & Pressão", expanded=True):
