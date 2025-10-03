@@ -282,8 +282,7 @@ with tab2:
         plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
        
     # <<< NOVO GRÁFICO ADICIONADO AQUI >>>
-    with st.expander("Visualizar gráfico combinado", expanded=True):
-        st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
+   st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
 
     fig = px.bar(
         df_final,
@@ -291,16 +290,16 @@ with tab2:
         y='Percentual',
         color='Resposta',
         barmode='group',
-        facet_col='Indicador',
+        facet_col='Indicador',  # Cria um painel para cada indicador
         category_orders={'obesidade_class': LABELS_IMC}
     )
-
+    
     fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
     fig.update_layout(
         yaxis_title="Percentual (%)",
         xaxis_title="Classificação de Obesidade"
     )
-
+    
     st.plotly_chart(fig, use_container_width=True)
 
     with st.expander("Boxplots de Perfil Lipídico por Classe de Obesidade"):
