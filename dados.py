@@ -294,16 +294,12 @@ with tab2:
             fig_tchol = px.box(df_filtrado, x='obesidade_class', y='colesterol_total', color='obesidade_class', title="Colesterol Total")
             st.plotly_chart(fig_tchol, use_container_width=True)
 
-    # --- NOVO BLOCO COM A TABELA DE RESUMO ---
     with st.expander("Resumo do Tempo Sentado por Status de Obesidade", expanded=True):
-        # 1. Cria um dataframe temporário para a nova coluna de status
         df_temp_obesidade = df_filtrado.copy()
         
-        # 2. Define as listas para os dois grandes grupos
         grupo_sobrepeso_obeso = ['Sobrepeso', 'Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III']
         grupo_normal_abaixo = ['Abaixo do Peso', 'Peso Normal']
         
-        # 3. Cria a nova coluna de classificação
         def agrupar_status_obesidade(classe):
             if classe in grupo_sobrepeso_obeso:
                 return 'Sobrepeso ou Obesidade'
@@ -313,13 +309,10 @@ with tab2:
             
         df_temp_obesidade['status_obesidade_agrupado'] = df_temp_obesidade['obesidade_class'].apply(agrupar_status_obesidade)
         
-        # 4. Filtra para manter apenas os dois grupos de interesse
         df_para_analise = df_temp_obesidade[df_temp_obesidade['status_obesidade_agrupado'].isin(['Sobrepeso ou Obesidade', 'Peso Normal ou Abaixo'])]
         
-        # 5. Gera a tabela de resumo estatístico
         tabela_resumo = df_para_analise.groupby('status_obesidade_agrupado')['tempo_sentado_min'].describe()
         
-        # 6. Seleciona e renomeia as colunas de interesse
         tabela_resumo = tabela_resumo[['count', 'mean', '50%', 'std']].rename(columns={
             'count': 'Nº de Participantes',
             'mean': 'Média (minutos)',
@@ -327,10 +320,8 @@ with tab2:
             'std': 'Desvio Padrão (minutos)'
         })
         
-        # 7. Adiciona uma coluna com a média em horas para facilitar a leitura
         tabela_resumo['Média (horas)'] = tabela_resumo['Média (minutos)'] / 60
         
-        # 8. Exibe a tabela formatada
         st.subheader("Análise do Tempo Sentado Diário por Grupo de Peso")
         st.dataframe(tabela_resumo.style.format({
             'Nº de Participantes': '{:,.0f}',
@@ -340,6 +331,41 @@ with tab2:
             'Média (horas)': '{:.2f}'
         }))
 
+    # <<< NOVO GRÁFICO ADICIONADO AQUI >>>
+    with st.expander("Gráfico Combinado: Obesidade x Colesterol & Pressão", expanded=True):
+        # Seleciona apenas as colunas necessárias
+        df_comb = df_filtrado[['obesidade_class', 'historico_pressao_alta_cat', 'historico_colesterol_alto_cat']].copy()
+
+        # Conta os percentuais por obesidade
+        tabela_pressao = pd.crosstab(df_comb['obesidade_class'], df_comb['historico_pressao_alta_cat'], normalize='index') * 100
+        tabela_colesterol = pd.crosstab(df_comb['obesidade_class'], df_comb['historico_colesterol_alto_cat'], normalize='index') * 100
+
+        # Transforma em formato longo
+        df_pressao = tabela_pressao.reset_index().melt(id_vars='obesidade_class', var_name='Resposta', value_name='Percentual')
+        df_pressao['Indicador'] = 'Pressão Alta'
+
+        df_colesterol = tabela_colesterol.reset_index().melt(id_vars='obesidade_class', var_name='Resposta', value_name='Percentual')
+        df_colesterol['Indicador'] = 'Colesterol Alto'
+
+        # Junta as duas bases
+        df_final = pd.concat([df_pressao, df_colesterol])
+
+        # Cria o gráfico
+        fig = px.bar(
+            df_final,
+            x='obesidade_class',
+            y='Percentual',
+            color='Resposta',
+            barmode='group',
+            facet_col='Indicador',  # Cria um painel para cada indicador
+            category_orders={'obesidade_class': LABELS_IMC},
+            title="Obesidade x Colesterol Alto & Pressão Alta"
+        )
+
+        fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
+        fig.update_layout(yaxis_title="Percentual (%)", xaxis_title="Classificação de Obesidade")
+
+        st.plotly_chart(fig, use_container_width=True)
 
 with tab3:
     st.header("3. Análise de Sedentarismo")
