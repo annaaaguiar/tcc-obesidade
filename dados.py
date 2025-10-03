@@ -300,10 +300,10 @@ with tab2:
         # Junta as duas bases
         df_final = pd.concat([df_pressao, df_colesterol])
 
-        # Cria o gráfico
-       st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
+       #Cria o gráfico
+    st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
 
-        fig = px.bar(
+    fig = px.bar(
         df_final,
         x='obesidade_class',
         y='Percentual',
@@ -311,12 +311,15 @@ with tab2:
         barmode='group',
         facet_col='Indicador',  # Cria um painel para cada indicador
         category_orders={'obesidade_class': LABELS_IMC}
-        )
-    
-        fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
-        fig.update_layout(yaxis_title="Percentual (%)", xaxis_title="Classificação de Obesidade")
-    
-        st.plotly_chart(fig, use_container_width=True)
+    )
+
+    fig.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
+    fig.update_layout(
+    yaxis_title="Percentual (%)",
+    xaxis_title="Classificação de Obesidade"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
     with st.expander("Boxplots de Perfil Lipídico por Classe de Obesidade"):
         col_box1, col_box2, col_box3 = st.columns(3)
