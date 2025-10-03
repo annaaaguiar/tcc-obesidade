@@ -283,7 +283,7 @@ with tab2:
        
     # <<< NOVO GRÁFICO ADICIONADO AQUI >>>
     with st.expander("Visualizar gráfico combinado", expanded=True):
-    st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
+        st.subheader("Obesidade x Colesterol Alto & Pressão Alta")
 
     fig = px.bar(
         df_final,
