@@ -2,19 +2,19 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# --- Configuração da Página ---
+# config da página
 st.set_page_config(
     layout="wide",
     page_title="Dashboard de Saúde - Análise de Risco",
     page_icon="🧬",
 )
 
-# --- Constantes Globais ---
+# constantes
 COLOR_MAP = {'Homem': '#1f77b4', 'Mulher': '#e377c2'}
 LABELS_IMC = ['Abaixo do Peso', 'Peso Normal', 'Sobrepeso', 'Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III']
 LABELS_SED = ['Baixo (até 5h)', 'Moderado (5h a 8h)', 'Alto (acima de 8h)', 'Não Informado']
 
-# --- Carregamento e Processamento dos Dados (com Cache) ---
+# processamento com cache
 @st.cache_data
 def load_data():
     """
@@ -113,7 +113,7 @@ if df.empty:
     st.warning("Nenhum dado encontrado após a aplicação dos filtros rigorosos. Verifique se todos os arquivos CSV necessários estão presentes.")
     st.stop()
 
-# --- Barra Lateral de Filtros ---
+# filtro
 st.sidebar.header("Filtros Interativos")
 genero_selecionado = st.sidebar.multiselect("Gênero", options=df['genero'].unique(), default=df['genero'].unique())
 idade_min = int(df['idade_anos'].min())
@@ -129,11 +129,11 @@ df_filtrado = df[
     (df['sedentarismo_nivel'].isin(sedentarismo_selecionado))
 ]
 
-# --- Título Principal ---
+# título
 st.title("Dashboard Interativo: Análise de Obesidade, Sedentarismo e Riscos Associados")
 st.markdown(f"Analisando **{len(df_filtrado)}** participantes selecionados (base de dados completa).")
 
-# --- Abas para Organização ---
+#classificação por categoria
 tab1, tab2, tab3, tab4 = st.tabs(["Resumo da Amostra", "Análise de Obesidade", "Análise de Sedentarismo", "Conclusão e Risco"])
 
 def plotar_associacao(df, var_principal, var_secundaria, titulo):
@@ -206,44 +206,10 @@ with tab2:
                                       category_orders={'obesidade_class': LABELS_IMC},
                                       color_discrete_map=COLOR_MAP)
         st.plotly_chart(fig_imc_genero, use_container_width=True)
-        
-   with st.expander("Tabelas e Gráficos de Associação com Obesidade"):
-            plotar_associacao(df_filtrado, 'obesidade_class', 'historico_pressao_alta_cat', 'Obesidade x Pressão Alta')
-            plotar_associacao(df_filtrado, 'obesidade_class', 'historico_colesterol_alto_cat', 'Obesidade x Colesterol Alto')
-            plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
-
-        
-    with st.expander("Gráfico Combinado: Obesidade x Colesterol & Pressão", expanded=True):
-            df_combinado = df_filtrado.groupby('obesidade_class', observed=True).agg(
-            colesterol_alto=('historico_colesterol_alto_cat', lambda x: (x == 'Sim').mean() * 100),
-            pressao_alta=('historico_pressao_alta_cat', lambda x: (x == 'Sim').mean() * 100)
-            ).reset_index()
-
-            df_meltado = df_combinado.melt(
-                id_vars='obesidade_class',
-                value_vars=['colesterol_alto', 'pressao_alta'],
-                var_name='Condição',
-                value_name='Percentual'
-            )
-
-            df_meltado['Condição'] = df_meltado['Condição'].map({
-                'colesterol_alto': 'Colesterol Alto',
-                'pressao_alta': 'Pressão Alta'
-            })
-
-            fig_combinado = px.bar(
-                df_meltado,
-                x='obesidade_class',
-                y='Percentual',
-                color='Condição',
-                barmode='group',
-                category_orders={'obesidade_class': LABELS_IMC},
-                title="Prevalência de Colesterol e Pressão Altos por Classe de Obesidade"
-            )
-
-            fig_combinado.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
-            fig_combinado.update_layout(yaxis_title="Percentual (%)", xaxis_title="Classe de Obesidade")
-            st.plotly_chart(fig_combinado, use_container_width=True)
+    with st.expander("Tabelas e Gráficos de Associação com Obesidade"):
+        plotar_associacao(df_filtrado, 'obesidade_class', 'historico_pressao_alta_cat', 'Obesidade x Pressão Alta')
+        plotar_associacao(df_filtrado, 'obesidade_class', 'historico_colesterol_alto_cat', 'Obesidade x Colesterol Alto')
+        plotar_associacao(df_filtrado, 'obesidade_class', 'historico_doenca_cardiaca_cat', 'Obesidade x Doença Cardíaca')
     with st.expander("Boxplots de Perfil Lipídico por Classe de Obesidade"):
         col_box1, col_box2, col_box3 = st.columns(3)
         with col_box1:
