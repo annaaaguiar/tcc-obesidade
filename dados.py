@@ -210,7 +210,7 @@ def plotar_associacao(df, var_principal, var_secundaria, titulo):
         xaxis_title_font_size=16,
         yaxis_title_font_size=16,
         legend_title_font_size=14,
-        font=dict(size=12)
+        font=dict(size=14)
     )
     
     st.plotly_chart(fig, use_container_width=True)
